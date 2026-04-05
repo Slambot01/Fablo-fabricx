@@ -1,0 +1,86 @@
+<%#
+  EJS template for Fablo's Fabric-X docker-compose generation.
+  Mirrors the pattern used in src/setup-docker/templates/docker-compose.ejs
+  but generates FSC-based services instead of standard Fabric peers.
+
+  Template variables (from FabloConfigExtended):
+    - networkName       : string
+    - global.fabricXImages.committerTestNode : string
+    - orgs[]            : OrgJsonExtended
+      - org.committers[]: CommitterJson
+      - org.endorsers[]  : FscNodeJson
+%>
+version: "2.4"
+
+networks:
+  <%= networkName %>:
+    name: <%= networkName %>
+
+services:
+<% orgs.forEach(org => { %>
+<% org.committers.forEach(committer => { %>
+  # ── Committer Test Node: <%= committer.name %> ──────────────────────────────
+  # Bundles orderer + committer sidecar + query service + database
+  # Only pre-built image in a Fabric-X network
+  <%= committer.name %>:
+    image: <%= global.fabricXImages.committerTestNode %>
+    environment:
+      - SC_SIDECAR_ORDERER_IDENTITY_MSP_DIR=<%= committer.sidecar.mspDir %>
+      - SC_SIDECAR_ORDERER_IDENTITY_MSP_ID=<%= committer.sidecar.mspId %>
+      - SC_SIDECAR_ORDERER_CHANNEL_ID=<%= committer.sidecar.channelId %>
+      - SC_SIDECAR_ORDERER_SIGNED_ENVELOPES=<%= committer.sidecar.signedEnvelopes %>
+      - SC_ORDERER_BLOCK_SIZE=<%= committer.sidecar.blockSize %>
+      - SC_QUERY_SERVICE_SERVER_ENDPOINT=:<%= committer.ports.queryService %>
+      - SC_SIDECAR_LOGGING_LEVEL=<%= committer.logging.sidecar %>
+      - SC_QUERY_SERVICE_LOGGING_LEVEL=<%= committer.logging.queryService %>
+      - SC_COORDINATOR_LOGGING_LEVEL=<%= committer.logging.coordinator %>
+      - SC_ORDERER_LOGGING_LEVEL=<%= committer.logging.orderer %>
+      - SC_VC_LOGGING_LEVEL=<%= committer.logging.vc %>
+      - SC_VERIFIER_LOGGING_LEVEL=<%= committer.logging.verifier %>
+    ports:
+      - <%= committer.ports.sidecar %>:<%= committer.ports.sidecar %>
+      - <%= committer.ports.orderer %>:<%= committer.ports.orderer %>
+      - <%= committer.ports.queryService %>:<%= committer.ports.queryService %>
+      - <%= committer.ports.database %>:<%= committer.ports.database %>
+    volumes:
+      - ./crypto:/root/config/crypto
+      - ./sc-genesis-block.proto.bin:/root/config/sc-genesis-block.proto.bin
+    networks:
+      <%= networkName %>:
+        aliases:
+          - committer-sidecar
+          - committer-queryservice
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "<%= committer.ports.sidecar %>"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+<% }) %>
+<% org.endorsers.forEach(endorser => { %>
+  # ── FSC <%= endorser.nodeType %>: <%= endorser.name %> ──────────────────────
+  # Fabric Smart Client node — NOT a standard Fabric peer
+  # No pre-built image — builds from context using NODE_TYPE build arg
+  <%= endorser.name %>:
+    build:
+      context: .
+      args:
+        - NODE_TYPE=<%= endorser.nodeType %>
+    environment:
+      - CORE_FSC_ID=<%= endorser.fsc.id %>
+      - CORE_P2P_LISTENADDRESS=<%= endorser.fsc.p2pListenAddress %>
+      - CORE_FSC_PERSISTENCES_OPTS_DATASOURCE=<%= endorser.db.datasource %>
+    ports:
+      - <%= endorser.ports.api %>:9000
+      - <%= endorser.ports.p2p %>:<%= endorser.ports.p2p %>
+    volumes:
+      - ./conf/<%= endorser.name %>:/conf
+    working_dir: /conf
+    depends_on:
+      committer-test-node:
+        condition: service_healthy
+    networks:
+      <%= networkName %>:
+        aliases:
+          - <%= endorser.name %>.<%= org.organization.domain %>
+<% }) %>
+<% }) %>
