@@ -123,4 +123,4 @@ src/setup-fabricx/
 | Engine Routing | 1 | 2 | Medium |
 | Config Defaults | 0 | 1 | Small |
 | Tests | 4-5 | 2 | Medium |
-| **Total** | **~13** | **~8** | **12 weeks** |
+| **Total** | **~13** | **~8** | |
