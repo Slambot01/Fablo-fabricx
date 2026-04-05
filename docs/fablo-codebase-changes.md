@@ -102,13 +102,14 @@ fabricx-up.sh
 - TLS certificate handling (Fabric-X also uses TLS)
 
 ## New Directory: src/setup-fabricx/
-
+```text
 src/setup-fabricx/
-├── index.ts                  SetupFabricX class (mirrors SetupDocker)
+├── index.ts # SetupFabricX class (mirrors SetupDocker)
 └── templates/
-    ├── docker-compose.ejs    Compose for committer + FSC nodes
-    ├── fsc-core-yaml.ejs     Per-node FSC configuration
-    └── routing-config.ejs    Per-node P2P mesh routing
+├── docker-compose.ejs # Compose for committer + FSC nodes
+├── fsc-core-yaml.ejs # Per-node FSC configuration
+└── routing-config.ejs # Per-node P2P mesh routing
+```
 
 ## Estimated Scope
 

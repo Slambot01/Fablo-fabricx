@@ -1,8 +1,8 @@
 # Fabric-X Integration into Fablo — Proof of Concept
 
-**Author:** Ritesh Pandit [@Slambot01](https://github.com/Slambot01)
-**Mentorship Issue:** [LF-Decentralized-Trust-Mentorships #83](https://github.com/LF-Decentralized-Trust-Mentorships/mentorship-program/issues/83)
-**Fablo Issue:** [hyperledger-labs/fablo #611](https://github.com/hyperledger-labs/fablo/issues/611)
+**Author:** Ritesh Pandit [@Slambot01](https://github.com/Slambot01)  
+**Mentorship Issue:** [LF-Decentralized-Trust-Mentorships #83](https://github.com/LF-Decentralized-Trust-Mentorships/mentorship-program/issues/83)  
+**Fablo Issue:** [hyperledger-labs/fablo #611](https://github.com/hyperledger-labs/fablo/issues/611)  
 
 ## Purpose
 
@@ -20,8 +20,8 @@ committer-test-node (external infrastructure)
 │ Orderer  │Committer │ DB      │ Query   │
 │  :7050   │   :4001  │  :5433  │  :7001  │
 └──────────┴──────────┴─────────┴─────────┘
-        ▲  websocket P2P mesh via routing-config.yaml
-┌────┴──────┐ ┌────┴──────┐ ┌────┴──────┐
+                    ▲  websocket P2P mesh via routing-config.yaml
+┌───────────┐ ┌─────┴─────┐ ┌───────────┐
 │ endorser1 │ │ issuer    │ │ owner1    │
 │ Org1MSP   │ │ Org1MSP   │ │ Org1MSP   │
 │ API:9300  │ │ API:9100  │ │ API:9500  │
@@ -50,10 +50,10 @@ derived from the committer-test-node Docker image's configuration interface
 
 | Directory | What It Shows |
 |-----------|--------------|
-| `docs/` | Architecture mapping, codebase analysis, implementation plan |
-| `schema/` | Proposed fablo-config.json extensions + TypeScript types |
-| `generated/` | Hand-crafted files showing what Fablo would output |
-| `templates/` | Prototype EJS templates for the generation engine |
+| `docs/` | Architecture mapping ([architecture-mapping.md](docs/architecture-mapping.md)) and codebase analysis ([fablo-codebase-changes.md](docs/fablo-codebase-changes.md)) |
+| `schema/` | Schema extensions ([fablo-config-fabricx.json](schema/fablo-config-fabricx.json)) and Typings ([FabloConfigJson.fabricx.ts](schema/FabloConfigJson.fabricx.ts)) |
+| `generated/` | Sample output: [docker-compose.yml](generated/docker-compose.yml), [core.yaml](generated/conf/endorser1/core.yaml), [routing-config.yaml](generated/conf/endorser1/routing-config.yaml), [fabricx-up.sh](generated/scripts/fabricx-up.sh) |
+| `templates/` | Source EJS prototypes: [docker-compose-fabricx.ejs](templates/docker-compose-fabricx.ejs), [fsc-core-yaml.ejs](templates/fsc-core-yaml.ejs), [routing-config.ejs](templates/routing-config.ejs) |
 
 Source references are noted inline. All values derived from
 `fabric-x/samples/tokens/` unless otherwise noted.
