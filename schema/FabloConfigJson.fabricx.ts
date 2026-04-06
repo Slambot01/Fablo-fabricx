@@ -77,9 +77,9 @@ interface FscNodeJson {
 
 interface OrgJsonExtended {
   organization: { name: string; domain: string; mspName: string };
-  ca?: any;       // CaJson from existing Fablo types
-  peers?: any[];  // PeerJson[] — classic Fabric only
-  orderers?: any[]; // OrdererJson[] — classic Fabric only
+  ca?: Record<string, unknown>;  // CaJson — defined in Fablo's src/types/FabloConfigJson.ts
+  peers?: Record<string, unknown>[];   // PeerJson[] — classic Fabric only
+  orderers?: Record<string, unknown>[]; // OrdererJson[] — classic Fabric only
   committers?: CommitterJson[];  // Fabric-X only
   endorsers?: FscNodeJson[];     // Fabric-X only
 }

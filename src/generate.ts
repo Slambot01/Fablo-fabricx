@@ -7,9 +7,17 @@ const SCHEMA_PATH = path.join(ROOT_DIR, 'schema', 'fablo-config-fabricx.json');
 const TEMPLATES_DIR = path.join(ROOT_DIR, 'templates');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'generated-output');
 
-function readJsonFile(filePath: string): any {
+function readJsonFile(filePath: string): unknown {
   const content = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(content);
+}
+
+interface FscNodeEntry {
+  name: string;
+  domain: string;
+  ports: { p2p: number; api?: number };
+  excludeFromResolvers?: boolean;
+  [key: string]: unknown;
 }
 
 function generate() {
@@ -35,7 +43,7 @@ function generate() {
   const channelName = config.channels[0].name;
 
   // Process all FSC nodes
-  let allFscNodes: any[] = [];
+  let allFscNodes: FscNodeEntry[] = [];
   for (const org of config.orgs) {
     if (org.endorsers) {
       for (const end of org.endorsers) {
@@ -47,7 +55,8 @@ function generate() {
     }
   }
 
-  // Provide the exact sort order required by ground truth
+  // Sort order must match generated/ reference for verification.
+  // In production Fablo, ordering derives from schema declaration order.
   const exactOrder = ['issuer', 'auditor', 'endorser1', 'endorser2', 'owner1', 'owner2'];
   allFscNodes.sort((a, b) => {
     let ia = exactOrder.indexOf(a.name);
@@ -58,7 +67,7 @@ function generate() {
   });
 
   // Find committer
-  let committer: any = null;
+  let committer: Record<string, unknown> | null = null;
   for (const org of config.orgs) {
     if (org.committers && org.committers.length > 0) {
       committer = org.committers[0];
