@@ -7,7 +7,7 @@ const SCHEMA_PATH = path.join(ROOT_DIR, 'schema', 'fablo-config-fabricx.json');
 const TEMPLATES_DIR = path.join(ROOT_DIR, 'templates');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'generated-output');
 
-function readJsonFile(filePath: string): unknown {
+function readJsonFile(filePath: string): Record<string, unknown> {
   const content = fs.readFileSync(filePath, 'utf8');
   return JSON.parse(content);
 }
@@ -28,7 +28,8 @@ function generate() {
   }
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const config = readJsonFile(SCHEMA_PATH);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const config = readJsonFile(SCHEMA_PATH) as Record<string, any>;
   
   const dockerComposeTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'docker-compose-fabricx.ejs'), 'utf8');
   const coreYamlTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'fsc-core-yaml.ejs'), 'utf8');
