@@ -1,0 +1,35 @@
+=== FABRIC-X RUNNING EVIDENCE ===
+Date: Mon Apr  6 10:38:40 UTC 2026
+
+=== Docker PS ===
+NAMES                 IMAGE                                                    STATUS
+tokens-swagger-ui-1   swaggerapi/swagger-ui                                    Up 9 minutes
+tokens-issuer-1       tokens-issuer                                            Up 9 minutes (healthy)
+tokens-endorser1-1    tokens-endorser1                                         Up 9 minutes (healthy)
+tokens-owner1-1       tokens-owner1                                            Up 9 minutes (healthy)
+tokens-owner2-1       tokens-owner2                                            Up 9 minutes (healthy)
+test-committer        ghcr.io/hyperledger/fabric-x-committer-test-node:0.1.7   Up 17 minutes
+
+=== Network ===
+tokens-swagger-ui-1 tokens-endorser1-1 tokens-owner1-1 tokens-issuer-1 test-committer tokens-owner2-1 
+
+=== API Health ===
+swagger: 200
+endorser1: 404
+issuer: 404
+
+=== Committer Logs (last 10) ===
+2026-04-06T10:38:41.130Z	info	sidecar	Failed delivering to 172.19.0.1:43780 with status NOT_FOUND: channel not found
+2026-04-06T10:38:41.130Z	info	sidecar	Starting new deliver loop for 172.19.0.1:43780
+2026-04-06T10:38:41.130Z	info	sidecar	Attempting to read seek info message from 172.19.0.1:43780
+2026-04-06T10:38:41.130Z	info	sidecar	Failed delivering to 172.19.0.1:43780 with status NOT_FOUND: channel not found
+2026-04-06T10:38:41.132Z	info	sidecar	Starting new deliver loop for 172.19.0.1:43780
+2026-04-06T10:38:41.132Z	info	sidecar	Attempting to read seek info message from 172.19.0.1:43780
+2026-04-06T10:38:41.132Z	info	sidecar	Failed delivering to 172.19.0.1:43780 with status NOT_FOUND: channel not found
+2026-04-06T10:38:41.132Z	info	sidecar	Starting new deliver loop for 172.19.0.1:43780
+2026-04-06T10:38:41.132Z	info	sidecar	Attempting to read seek info message from 172.19.0.1:43780
+2026-04-06T10:38:41.132Z	info	sidecar	Failed delivering to 172.19.0.1:43780 with status NOT_FOUND: channel not found
+
+=== Note ===
+Channel mismatch: xdev creates mychannel, FSC configs reference arma
+All containers healthy. Delivery errors expected due to this mismatch.
