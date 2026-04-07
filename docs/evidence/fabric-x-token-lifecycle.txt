@@ -1,0 +1,51 @@
+=== FABRIC-X FULL TOKEN LIFECYCLE EVIDENCE ===
+Date: 2026-04-07 19:01 UTC
+Platform: WSL2 Ubuntu 24.04, Docker Desktop 29.2.0
+Fabric-X Path: PLATFORM=xdev, app images PLATFORM=fabricx
+
+=== Fixes Applied ===
+1. Channel mismatch: changed arma to mychannel in all 5 conf/*/core.yaml files
+2. Namespace creation: used correct flags from fabricx_dev.mk including
+   --mspConfigPath=channel_admin and --pk=endorser cert
+
+=== Container Status ===
+tokens-endorser1-1    tokens-endorser1                       healthy
+tokens-issuer-1       tokens-issuer                          healthy
+tokens-owner1-1       tokens-owner1                          healthy
+tokens-owner2-1       tokens-owner2                          healthy
+tokens-swagger-ui-1   swaggerapi/swagger-ui                  up
+test-committer        fabric-x-committer-test-node:0.1.7     up
+
+=== Token Operations (all successful) ===
+
+1. Endorser init: {"message":"ok"}
+
+2. Issue 100 EURX to alice (owner1):
+   TX: 97d6de3761f92d662b68b529b1f863af79dbc0aaebc8a9a2e433dd54faf30183
+
+3. Issue 200 EURX to alice:
+   TX: ad7e9baeae5484993c57306821041e04264426bc68aaeca4a2cfc2972cd88c1b
+
+4. Issue 150 EURX to carlos (owner2):
+   TX: 6397027daa25c09f0a79fb5ec7f58f75d48e434e49639ce30821a0e143b0f94b
+
+5. Alice balance: 300 EURX (correct)
+6. Carlos balance: 150 EURX (correct)
+
+7. Transfer 50 EURX from alice to carlos:
+   TX: 2b800fbb4ebeb86cdc3bb2a23261c52013942ff9bb843906e7a7859f65e588bb
+
+8. Alice balance after transfer: 250 EURX (300 - 50)
+9. Carlos balance after transfer: 200 EURX (150 + 50)
+
+=== Transaction Histories ===
+Alice: 3 transactions (all Confirmed) - 2 issuances received, 1 transfer sent
+Carlos: 2 transactions (all Confirmed) - 1 issuance received, 1 transfer received
+
+=== What This Proves ===
+1. Fabric-X committer-test-node correctly orders and commits transactions
+2. FSC nodes communicate via libp2p mesh
+3. Zero-knowledge proof token operations (zkatdlog) work end-to-end
+4. Cross-node transfers between owner1 and owner2 succeed
+5. Transaction histories correctly maintained per account
+6. Setup issues were configuration mismatches, not architectural problems
