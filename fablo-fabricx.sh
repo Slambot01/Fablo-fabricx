@@ -76,8 +76,13 @@ restore_backups() {
 }
 
 clean_fsc_data() {
+    # Data dirs are created by Docker (root-owned), so use a container to clean
     for node in $NODES; do
-        rm -rf "$FABRIC_X_DIR/conf/$node/data/" 2>/dev/null || true
+        if [ -d "$FABRIC_X_DIR/conf/$node/data" ]; then
+            docker run --rm -v "$FABRIC_X_DIR/conf/$node/data:/data" \
+                alpine sh -c "rm -rf /data/*" 2>/dev/null || true
+            rm -rf "$FABRIC_X_DIR/conf/$node/data/" 2>/dev/null || true
+        fi
     done
 }
 
@@ -166,7 +171,7 @@ cmd_setup() {
 
     # Step 5: Generate FSC keys
     print_step "5/5" "Checking FSC node keys..."
-    if [ -d "$FABRIC_X_DIR/conf/endorser1/fsc" ]; then
+    if [ -f "$FABRIC_X_DIR/conf/endorser1/keys/node.crt" ]; then
         print_ok "FSC keys already exist, skipping"
     else
         echo "  Generating FSC node keys (starting CA, enrolling identities)..."
@@ -188,7 +193,7 @@ cmd_up() {
     print_banner "Fablo-FabricX: Starting Network"
 
     # Step 1: Generate configs
-    print_step "1/12" "Generating Fabric-X configurations..."
+    print_step "1/13" "Generating Fabric-X configurations..."
     cd "$POC_DIR"
     if ! npm run generate --silent; then
         print_fail "Config generation failed"
@@ -197,10 +202,10 @@ cmd_up() {
     print_ok "Configurations generated"
 
     # Step 2: Validate setup exists
-    print_step "2/12" "Validating setup..."
+    print_step "2/13" "Validating setup..."
     local setup_ok=1
     [ -d "$FABRIC_X_DIR/crypto" ] || { print_fail "Crypto material missing"; setup_ok=0; }
-    [ -d "$FABRIC_X_DIR/conf/endorser1/fsc" ] || { print_fail "FSC keys missing"; setup_ok=0; }
+    [ -f "$FABRIC_X_DIR/conf/endorser1/keys/node.crt" ] || { print_fail "FSC keys missing"; setup_ok=0; }
     docker images | grep tokens-endorser1 > /dev/null 2>&1 || { print_fail "FSC images not built"; setup_ok=0; }
     if [ $setup_ok -eq 0 ]; then
         echo -e "${RED}Setup not complete. Run './fablo-fabricx.sh setup' first.${NC}"
@@ -208,13 +213,21 @@ cmd_up() {
     fi
     print_ok "Setup validated"
 
-    # Step 3: Clean previous FSC state
-    print_step "3/12" "Cleaning previous FSC state..."
+    # Step 3: Stop any previous containers
+    print_step "3/13" "Stopping any previous containers..."
+    cd "$FABRIC_X_DIR"
+    docker compose down -v 2>/dev/null || true
+    docker compose -f compose-xdev.yml down -v 2>/dev/null || true
+    docker network rm fabric_test 2>/dev/null || true
+    print_ok "Previous containers stopped"
+
+    # Step 4: Clean previous FSC state
+    print_step "4/13" "Cleaning previous FSC state..."
     clean_fsc_data
     print_ok "Previous state cleaned"
 
-    # Step 4: Backup original configs
-    print_step "4/12" "Backing up original configs..."
+    # Step 5: Backup original configs
+    print_step "5/13" "Backing up original configs..."
     for node in $NODES; do
         cp "$FABRIC_X_DIR/conf/$node/core.yaml" \
            "$FABRIC_X_DIR/conf/$node/core.yaml.bak"
@@ -224,7 +237,7 @@ cmd_up() {
     print_ok "Node configs backed up"
 
     # Step 5: Deploy generated configs
-    print_step "5/12" "Deploying generated configs..."
+    print_step "6/13" "Deploying generated configs..."
     for node in $NODES; do
         cp "$POC_DIR/generated-output/conf/$node/core.yaml" \
            "$FABRIC_X_DIR/conf/$node/core.yaml"
@@ -234,25 +247,25 @@ cmd_up() {
     print_ok "Node configs deployed"
 
     # Step 6: Deploy generated docker-compose
-    print_step "6/12" "Deploying generated docker-compose..."
+    print_step "7/13" "Deploying generated docker-compose..."
     cp "$FABRIC_X_DIR/compose.yml" "$FABRIC_X_DIR/compose.yml.bak"
     cp "$POC_DIR/generated-output/docker-compose.yml" \
        "$FABRIC_X_DIR/compose.yml"
     print_ok "compose.yml replaced with generated version (original backed up)"
 
     # Step 7: Create Docker network
-    print_step "7/12" "Creating Docker network..."
+    print_step "8/13" "Creating Docker network..."
     docker network create fabric_test 2>/dev/null || true
     print_ok "Docker network ready"
 
     # Step 8: Start the network
-    print_step "8/12" "Starting Fabric-X network (committer + FSC nodes)..."
+    print_step "9/13" "Starting Fabric-X network (committer + FSC nodes)..."
     cd "$FABRIC_X_DIR"
     docker compose up -d --wait
     print_ok "All containers started"
 
     # Step 9: Create namespace
-    print_step "9/12" "Creating token namespace..."
+    print_step "10/13" "Creating token namespace..."
     sleep 5
     cd "$FABRIC_X_DIR"
     go tool fxconfig namespace create token_namespace \
@@ -264,7 +277,7 @@ cmd_up() {
     print_ok "Namespace 'token_namespace' created"
 
     # Step 10: Wait for FSC nodes to be ready
-    print_step "10/12" "Waiting for FSC nodes..."
+    print_step "11/13" "Waiting for FSC nodes..."
     sleep 15
     for port in 9100 9300 9400 9500 9600; do
         curl -sf http://localhost:$port/healthz > /dev/null || {
@@ -274,13 +287,13 @@ cmd_up() {
     print_ok "FSC node health check complete"
 
     # Step 11: Initialize endorser
-    print_step "11/12" "Initializing endorser..."
+    print_step "12/13" "Initializing endorser..."
     curl -s -X POST http://localhost:9300/endorser/init > /dev/null 2>&1 || true
     sleep 3
     print_ok "Endorser initialized"
 
     # Step 12: Report
-    print_step "12/12" "Network status..."
+    print_step "13/13" "Network status..."
     echo ""
     echo -e "${GREEN}${BOLD}=========================================${NC}"
     echo -e "${GREEN}${BOLD}  Fabric-X network is UP${NC}"
@@ -396,7 +409,7 @@ cmd_test() {
     echo -e "${BOLD}--- Check balances after issuance ---${NC}"
     alice_bal=$(curl -s http://localhost:9500/owner/accounts/alice)
     echo "  Alice balance: $alice_bal"
-    if echo "$alice_bal" | grep -q '"100"'; then
+    if echo "$alice_bal" | grep -q '100'; then
         print_ok "Alice balance = 100"
         passed=$((passed + 1))
     else
@@ -407,7 +420,7 @@ cmd_test() {
     # 5. Check carlos balance = 50
     carlos_bal=$(curl -s http://localhost:9600/owner/accounts/carlos)
     echo "  Carlos balance: $carlos_bal"
-    if echo "$carlos_bal" | grep -q '"50"'; then
+    if echo "$carlos_bal" | grep -q '50'; then
         print_ok "Carlos balance = 50"
         passed=$((passed + 1))
     else
@@ -435,7 +448,7 @@ cmd_test() {
     echo -e "${BOLD}--- Final balances ---${NC}"
     alice_final=$(curl -s http://localhost:9500/owner/accounts/alice)
     echo "  Alice final: $alice_final"
-    if echo "$alice_final" | grep -q '"70"'; then
+    if echo "$alice_final" | grep -q '70'; then
         print_ok "Alice balance = 70"
         passed=$((passed + 1))
     else
@@ -446,7 +459,7 @@ cmd_test() {
     # 8. Check carlos balance = 80
     carlos_final=$(curl -s http://localhost:9600/owner/accounts/carlos)
     echo "  Carlos final: $carlos_final"
-    if echo "$carlos_final" | grep -q '"80"'; then
+    if echo "$carlos_final" | grep -q '80'; then
         print_ok "Carlos balance = 80"
         passed=$((passed + 1))
     else
