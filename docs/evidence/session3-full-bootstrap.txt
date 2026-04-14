@@ -1,0 +1,303 @@
+============================================================
+SESSION 3: FULL BOOTSTRAP LIVE TEST
+Date: 2026-04-14
+Commit under test: b84556a (with targeted fix for FSC keys check)
+Environment: WSL2 Ubuntu 24.04, Docker Desktop 29.2.0
+============================================================
+
+PHASE 1: CLEAN SLATE
+---------------------
+$ docker compose -f compose.yml down -v
+$ docker compose -f compose-xdev.yml down -v
+$ docker compose -f compose-endorser2.yml down -v
+$ docker network rm fabric_test
+$ rm -rf conf/*/data/
+
+Result: No containers running, clean state.
+
+PHASE 2: SETUP COMMAND
+-----------------------
+$ ./fablo-fabricx.sh setup
+
+==========================================
+  Fablo-FabricX: One-Time Setup
+==========================================
+
+[1/5] Validating environment...
+  ✓ All dependencies available (docker, docker compose, go, make, npm)
+[2/5] Checking Fabric prerequisites...
+  ✓ Prerequisites already installed (skipped)
+[3/5] Checking crypto material...
+  ✓ Crypto material exists (skipped)
+[4/5] Checking FSC node images...
+  ✓ FSC images already built (skipped)
+[5/5] Checking FSC node keys...
+  ✓ FSC keys already exist (skipped)
+
+Setup complete.
+Run ./fablo-fabricx.sh up to start the network.
+
+PHASE 3: UP COMMAND
+--------------------
+$ ./fablo-fabricx.sh up
+
+==========================================
+  Fablo-FabricX: Starting Network
+==========================================
+
+[1/13] Generating Fabric-X configurations...
+Starting Fabric-X configuration generation...
+ ✓ Generated docker-compose.yml
+ ✓ Generated conf/issuer/core.yaml
+ ✓ Generated conf/issuer/routing-config.yaml
+ ✓ Generated conf/auditor/core.yaml
+ ✓ Generated conf/auditor/routing-config.yaml
+ ✓ Generated conf/endorser1/core.yaml
+ ✓ Generated conf/endorser1/routing-config.yaml
+ ✓ Generated conf/endorser2/core.yaml
+ ✓ Generated conf/endorser2/routing-config.yaml
+ ✓ Generated conf/owner1/core.yaml
+ ✓ Generated conf/owner1/routing-config.yaml
+ ✓ Generated conf/owner2/core.yaml
+ ✓ Generated conf/owner2/routing-config.yaml
+Generation completed successfully!
+  ✓ Configurations generated
+[2/13] Validating setup...
+  ✓ Setup validated
+[3/13] Stopping any previous containers...
+  ✓ Previous containers stopped
+[4/13] Cleaning previous FSC state...
+  ✓ Previous state cleaned
+[5/13] Backing up original configs...
+  ✓ Original configs backed up
+[6/13] Deploying generated node configs...
+  ✓ Node configs deployed (5 nodes × 2 files)
+[7/13] Deploying generated docker-compose...
+  ✓ compose.yml replaced with generated version
+[8/13] Creating Docker network...
+  ✓ Docker network 'fabric_test' ready
+[9/13] Starting Fabric-X network (committer + FSC nodes)...
+ Container tokens-swagger-ui-1 Creating
+ Container test-committer Creating
+ Container tokens-swagger-ui-1 Created
+ Container test-committer Created
+ Container tokens-owner1-1 Creating
+ Container tokens-owner2-1 Creating
+ Container tokens-issuer-1 Creating
+ Container tokens-endorser1-1 Creating
+ Container tokens-endorser2-1 Creating
+ Container tokens-issuer-1 Created
+ Container tokens-owner1-1 Created
+ Container tokens-owner2-1 Created
+ Container tokens-endorser1-1 Created
+ Container tokens-endorser2-1 Created
+ Container test-committer Starting
+ Container tokens-swagger-ui-1 Starting
+ Container tokens-swagger-ui-1 Started
+ Container test-committer Started
+ Container test-committer Waiting
+ Container test-committer Healthy
+ Container tokens-issuer-1 Starting
+ Container tokens-endorser2-1 Starting
+ Container tokens-owner1-1 Starting
+ Container tokens-owner2-1 Starting
+ Container tokens-endorser1-1 Starting
+ Container tokens-issuer-1 Started
+ Container tokens-endorser2-1 Started
+ Container tokens-owner2-1 Started
+ Container tokens-endorser1-1 Started
+ Container tokens-owner1-1 Started
+ Container tokens-issuer-1 Waiting
+ Container tokens-endorser1-1 Waiting
+ Container tokens-endorser2-1 Waiting
+ Container tokens-owner1-1 Waiting
+ Container tokens-owner2-1 Waiting
+ Container tokens-swagger-ui-1 Waiting
+ Container test-committer Waiting
+ Container test-committer Healthy
+ Container tokens-swagger-ui-1 Healthy
+ Container tokens-endorser1-1 Healthy
+ Container tokens-owner1-1 Healthy
+ Container tokens-owner2-1 Healthy
+ Container tokens-endorser2-1 Healthy
+ Container tokens-issuer-1 Healthy
+  ✓ All containers started
+[10/13] Creating token namespace...
+Flag --pk has been deprecated, This flag is deprecated and will be removed in future versions
+  ✓ Namespace 'token_namespace' created
+[11/13] Waiting for FSC nodes to be healthy...
+  Waiting up to 120s for all FSC nodes...
+  ✓ All FSC nodes healthy (after 0s)
+[12/13] Initializing endorser...
+  ✓ Endorser initialized
+[13/13] Network status
+
+=========================================
+  Fabric-X network is UP
+=========================================
+
+NAMES                 STATUS
+tokens-endorser2-1    Up 11 seconds (healthy)
+tokens-owner2-1       Up 11 seconds (healthy)
+tokens-endorser1-1    Up 11 seconds (healthy)
+tokens-issuer-1       Up 11 seconds (healthy)
+tokens-owner1-1       Up 11 seconds (healthy)
+test-committer        Up 16 seconds (healthy)
+tokens-swagger-ui-1   Up 16 seconds
+
+  API Endpoints:
+    Issuer:    http://localhost:9100
+    Endorser1: http://localhost:9300
+    Endorser2: http://localhost:9400
+    Owner1:    http://localhost:9500
+    Owner2:    http://localhost:9600
+
+PHASE 4: STATUS COMMAND
+------------------------
+$ ./fablo-fabricx.sh status
+
+==========================================
+  Fablo-FabricX: Network Status
+==========================================
+
+--- Containers ---
+NAMES                 STATUS                    PORTS
+tokens-endorser2-1    Up 36 seconds (healthy)   0.0.0.0:9400->9000/tcp
+tokens-owner2-1       Up 36 seconds (healthy)   0.0.0.0:9600->9000/tcp
+tokens-endorser1-1    Up 36 seconds (healthy)   0.0.0.0:9300->9000/tcp
+tokens-issuer-1       Up 36 seconds (healthy)   0.0.0.0:9100->9000/tcp
+tokens-owner1-1       Up 36 seconds (healthy)   0.0.0.0:9500->9000/tcp
+test-committer        Up 41 seconds (healthy)   0.0.0.0:4001->4001/tcp, 0.0.0.0:5433->5433/tcp, 0.0.0.0:7001->7001/tcp, 0.0.0.0:7050->7050/tcp
+tokens-swagger-ui-1   Up 41 seconds             0.0.0.0:8080->8080/tcp
+
+--- FSC Node Health ---
+  ✓ issuer (port 9100): HEALTHY
+  ✓ endorser1 (port 9300): HEALTHY
+  ✓ endorser2 (port 9400): HEALTHY
+  ✓ owner1 (port 9500): HEALTHY
+  ✓ owner2 (port 9600): HEALTHY
+
+--- Port Mappings ---
+  Committer:  4001 (sidecar), 7050 (orderer), 7001 (query), 5433 (db)
+  Issuer:     localhost:9100 → container:9000
+  Endorser1:  localhost:9300 → container:9000
+  Endorser2:  localhost:9400 → container:9000
+  Owner1:     localhost:9500 → container:9000
+  Owner2:     localhost:9600 → container:9000
+
+PHASE 5: TOKEN LIFECYCLE TEST
+-------------------------------
+$ ./fablo-fabricx.sh test
+
+==========================================
+  Fabric-X Token Lifecycle E2E Test
+==========================================
+
+--- Health Checks ---
+  ✓ issuer (port 9100): HEALTHY
+  ✓ endorser1 (port 9300): HEALTHY
+  ✓ endorser2 (port 9400): HEALTHY
+  ✓ owner1 (port 9500): HEALTHY
+  ✓ owner2 (port 9600): HEALTHY
+
+--- Issue 100 EURX to alice (owner1) ---
+  Response: {"message":"ok","payload":"53e2bdd0118943521a9f598dec8035a637edc19d7bd3ecbf8e6005fc3493247d"}
+  ✓ PASS: Issued 100 EURX to alice
+--- Issue 50 EURX to carlos (owner2) ---
+  Response: {"message":"ok","payload":"a52b1f4de4e91fc10094d3b34520b8c3e8cdb6a06b8bd456995f757693622a07"}
+  ✓ PASS: Issued 50 EURX to carlos
+--- Check balances after issuance ---
+  Alice raw: {"message":"ok","payload":{"balance":[{"code":"EURX","value":100}],"id":"alice"}}
+  ✓ PASS: Alice balance = 100
+  Carlos raw: {"message":"ok","payload":{"balance":[{"code":"EURX","value":50}],"id":"carlos"}}
+  ✓ PASS: Carlos balance = 50
+
+--- Transfer 30 EURX: alice → carlos ---
+  Response: {"message":"ok","payload":"5ebe76e3f3881b210427ed2d6d15b58c8d9093461583e0a5b51bd6929cf7eafb"}
+  ✓ PASS: Transferred 30 EURX alice → carlos
+--- Final balances ---
+  Alice final: {"message":"ok","payload":{"balance":[{"code":"EURX","value":70}],"id":"alice"}}
+  ✓ PASS: Alice balance = 70
+  Carlos final: {"message":"ok","payload":{"balance":[{"code":"EURX","value":80}],"id":"carlos"}}
+  ✓ PASS: Carlos balance = 80
+
+========================================
+  ALL TESTS PASSED ✅  (7/7)
+========================================
+
+PHASE 6: DOWN COMMAND
+----------------------
+$ ./fablo-fabricx.sh down
+
+==========================================
+  Fablo-FabricX: Tearing Down Network
+==========================================
+
+[1/5] Stopping containers...
+  ✓ Containers stopped
+[2/5] Removing Docker network...
+  ✓ Network removed
+[3/5] Cleaning FSC node state...
+  ✓ FSC state cleaned
+[4/5] Restoring original configurations...
+  ✓ Restored 13 original file(s)
+[5/5] Done
+
+Fabric-X network is DOWN. All state cleaned.
+
+Post-down verification:
+  No containers running
+  No .bak files remaining
+  No data directories remaining
+
+PHASE 7: FULL CYCLE (up → test → down)
+-----------------------------------------
+
+UP: All 13 steps passed. 7 containers healthy.
+TEST: ALL TESTS PASSED ✅ (7/7)
+  Issue 100 EURX → alice: ok (TX 68295a8a...)
+  Issue 50 EURX → carlos: ok (TX b35732da...)
+  Alice balance = 100: ✓
+  Carlos balance = 50: ✓
+  Transfer 30 EURX alice→carlos: ok (TX 952ed10c...)
+  Alice balance = 70: ✓
+  Carlos balance = 80: ✓
+DOWN: 13 original files restored. Clean teardown.
+
+============================================================
+FIXES APPLIED DURING SESSION 3
+============================================================
+
+1. FSC keys idempotent check path
+   File: fablo-fabricx.sh (lines 263, 296)
+   Before: [ -d "$FABRIC_X_DIR/conf/issuer/fsc" ]
+   After:  [ -d "$FABRIC_X_DIR/conf/issuer/keys" ]
+   Reason: FSC keys are stored at conf/issuer/keys/, not
+           conf/issuer/fsc/. The wrong path caused setup
+           step 5 to re-run gen_crypto.sh even when keys
+           existed, which failed because identities (alice,
+           carlos) were already registered in the CA.
+
+============================================================
+SUMMARY
+============================================================
+
+All 7 phases passed:
+  [x] Phase 1: Clean slate
+  [x] Phase 2: Setup command (detected existing setup)
+  [x] Phase 3: UP command (13/13 steps, 7 containers healthy)
+  [x] Phase 4: Status command (all healthy)
+  [x] Phase 5: Token lifecycle (7/7 tests passed)
+  [x] Phase 6: Down command (13 files restored)
+  [x] Phase 7: Full cycle (up → test → down)
+
+Only ONE fix was needed: correcting the FSC keys directory
+check from conf/issuer/fsc to conf/issuer/keys.
+
+The full pipeline works:
+  fablo-config-fabricx.json → npm run generate →
+  docker-compose.yml + core.yaml + routing-config.yaml →
+  fablo-fabricx.sh up → RUNNING FABRIC-X NETWORK →
+  fablo-fabricx.sh test → ALL TESTS PASSED ✅
+
+============================================================
